@@ -54,6 +54,7 @@ class Decoder(object):
         string = body + sep
 
         market_entries = [(b'{' + entry)[:-2] for entry in string.split(b'{')]
+        market_entries[-1] += b'"}'
 
         return market_entries[1:]
 
