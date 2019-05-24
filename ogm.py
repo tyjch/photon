@@ -1,5 +1,5 @@
-from py2neo import Node, Relationship
-
+from py2neo import Graph, Node, Relationship
+from time import time
 
 
 def get_item(message):
@@ -44,16 +44,30 @@ def get_character(message):
 
 
 def get_requests(item_name, tier=1, enchantment=0, quality=0):
-
+	graph = Graph(password='password')
 
 	query = f'''
 	MATCH (c:Character)-[r:request]->(i:Item)
-	WHERE i.Group = {item_name}
+	WHERE i.Group = "{item_name}"
 	AND i.Tier = {tier}
 	AND i.Enchantment = {enchantment}
 	AND i.Quality = {quality}
-	AND i.LastViewed - {datetime.now()} < 10000
 	RETURN r
 	ORDER BY r.UnitPriceSilver
 	'''
 
+	return graph.run(query)
+
+
+
+
+if __name__ == '__main__':
+	response = get_requests(
+		'T6_MAIN_SPEAR',
+		tier=6,
+		enchantment=3,
+		quality=2
+	)
+
+	for record in response:
+		print(record)

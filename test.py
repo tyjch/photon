@@ -30,12 +30,12 @@ def handle_messages(messages):
 	        Id=m['Id'],
 	        Amount=m['Amount'],
 	        UnitPriceSilver=m['UnitPriceSilver'],
-	        Expires=m['Expires'],
+	        Expires=datetime.fromisoformat('2017-01-01T12:30:59.000000'),
 	        LastViewed=datetime.now()
         )
 
         graph.merge(offer, m['AuctionType'], 'Id')
-        print(m)
+        print(offer)
 
 
 def callback(packet):
