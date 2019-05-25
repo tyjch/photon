@@ -1,5 +1,7 @@
 from py2neo import Graph, Node, Relationship
-from time import time
+from datetime import datetime
+from items import item_dict
+
 
 
 def get_item(message):
@@ -43,31 +45,66 @@ def get_character(message):
 	return char_node
 
 
-def get_requests(item_name, tier=1, enchantment=0, quality=0):
+def get_requests(item_name, tier=1, enchantment=0, quality=0, after_ts=1000):
 	graph = Graph(password='password')
+	current_ts = datetime.timestamp(datetime.now())
 
 	query = f'''
-	MATCH (c:Character)-[r:request]->(i:Item)
-	WHERE i.Group = "{item_name}"
+	MATCH (:Character)-[r:request]->(i:Item)<-[o:offer]-(:Character)
+	WHERE i.Group = "{item_name}" 
 	AND i.Tier = {tier}
 	AND i.Enchantment = {enchantment}
 	AND i.Quality = {quality}
-	RETURN r
-	ORDER BY r.UnitPriceSilver
+	AND ({current_ts} - r.LastViewed) < {after_ts}
+	AND ({current_ts} - o.LastViewed) < {after_ts}
+	AND (r.UnitPriceSilver < o.UnitPriceSilver) 
+	RETURN i, (r.UnitPriceSilver - o.UnitPriceSilver) as profit
+	ORDER BY profit
 	'''
 
 	return graph.run(query)
+
+def get_profitable_trades(after_ts=100000):
+	graph = Graph(password='password')
+	current_ts = datetime.timestamp(datetime.now())
+
+	query = f'''
+	MATCH (:Character)-[r:request]->(i:Item)<-[o:offer]-(:Character)
+	WHERE ({current_ts} - r.LastViewed) < {after_ts}
+	AND ({current_ts} - o.LastViewed) < {after_ts}
+	AND (r.UnitPriceSilver - o.UnitPriceSilver) > 0 
+	RETURN i, r.UnitPriceSilver as sell_price, o.UnitPriceSilver as buy_price, (r.UnitPriceSilver - o.UnitPriceSilver) as profit
+	ORDER BY profit
+	'''
+
+	response = graph.run(query)
+
+
+	for r in response:
+		data = r.data()
+		item = data['i']
+
+		buy_price  = data['buy_price']
+		sell_price = data['sell_price']
+		profit     = data['profit']
+
+		item_name = item_dict[item['Group']]
+
+		print()
+		print('__' * 20)
+		print('>>> ', item_name)
+		print('T: ', item['Tier'])
+		print('E: ', item['Enchantment'])
+		print('Q: ', item['Quality'])
+		print('Buy for:  $', str(buy_price)[:-4])
+		print('Sell for: $', str(sell_price)[:-4])
+		print('PROFIT =  $', str(profit)[:-4])
+		print('__' * 20)
+
 
 
 
 
 if __name__ == '__main__':
-	response = get_requests(
-		'T6_MAIN_SPEAR',
-		tier=6,
-		enchantment=3,
-		quality=2
-	)
 
-	for record in response:
-		print(record)
+	response = get_profitable_trades()

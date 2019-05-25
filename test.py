@@ -4,6 +4,7 @@ from scapy.all import sniff, raw
 from py2neo import Graph, Node, Relationship
 from ogm import get_item, get_character
 from datetime import datetime
+from utility import convert_to_ts
 import json
 
 decoder = Decoder()
@@ -23,19 +24,20 @@ def handle_messages(messages):
         item = get_item(m)
         char = get_character(m)
 
-        offer = Relationship(
+        msg = Relationship(
 	        char,
 	        m['AuctionType'],
 	        item,
 	        Id=m['Id'],
 	        Amount=m['Amount'],
 	        UnitPriceSilver=m['UnitPriceSilver'],
-	        Expires=datetime.fromisoformat('2017-01-01T12:30:59.000000'),
-	        LastViewed=datetime.now()
+	        Expires=convert_to_ts(m['Expires']),
+	        LastViewed=datetime.timestamp(datetime.now())
         )
 
-        graph.merge(offer, m['AuctionType'], 'Id')
-        print(offer)
+        print(msg)
+        graph.merge(msg, m['AuctionType'], 'Id')
+
 
 
 def callback(packet):
@@ -51,7 +53,6 @@ def callback(packet):
 
 
 if __name__ == '__main__':
-    graph.delete_all()
     capture = sniff(filter='udp port 5056', prn=callback)
 
 
