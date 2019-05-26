@@ -64,6 +64,7 @@ def get_requests(item_name, tier=1, enchantment=0, quality=0, after_ts=1000):
 
 	return graph.run(query)
 
+
 def get_profitable_trades(after_ts=100000):
 	graph = Graph(password='password')
 	current_ts = datetime.timestamp(datetime.now())

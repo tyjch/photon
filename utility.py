@@ -1,5 +1,7 @@
 from scapy.all import *
 from datetime import datetime
+from playsound import playsound
+import os
 
 def get_hexdump_str(packet):
     dump = linehexdump(packet, dump=True)
@@ -23,10 +25,12 @@ def convert_to_ts(iso_string):
 
 	return ts
 
-
+def alert(s='Alert'):
+	os.system(f'say "{s}"')
 
 
 if __name__ == '__main__':
+    alert()
 
     iso = '3018-09-24T22:31:05.57745'
     ts = convert_to_ts(iso)

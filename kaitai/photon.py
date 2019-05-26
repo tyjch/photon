@@ -20,6 +20,7 @@ class Photon(KaitaiStruct):
         send_reliable_msg   = 6
         send_unreliable_msg = 7
         send_reliable_frag  = 8
+        command_type        = 12
 
     class MessageTypes(Enum):
         unknown            = 0
@@ -27,13 +28,16 @@ class Photon(KaitaiStruct):
         operation_request  = 2
         message_type_3     = 3
         event_data         = 4
+        message_type_6     = 6
         operation_response = 7
+        message_type_12    = 12
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
         self._root = _root if _root else self
         self._read()
+
 
     def _read(self):
         self.interface = self._io.read_bytes(42)
@@ -89,14 +93,18 @@ class Photon(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.signature = self._io.read_u1()
-            self.type = self._root.MessageTypes(self._io.read_u1())
-            self.operation_code = self._io.read_u1()
-            self.event_code = self._io.read_u1()
-            self.operation_response_code = self._io.read_u2be()
-            self.operation_debug_byte = self._io.read_u1()
-            self.parameter_count = self._io.read_s2be()
-            self.data = self._io.read_bytes((self._parent.length - 21))
+            try:
+                self.signature = self._io.read_u1()
+                self.type = self._root.MessageTypes(self._io.read_u1())
+                self.operation_code = self._io.read_u1()
+                self.event_code = self._io.read_u1()
+                self.operation_response_code = self._io.read_u2be()
+                self.operation_debug_byte = self._io.read_u1()
+                self.parameter_count = self._io.read_s2be()
+                self.data = self._io.read_bytes((self._parent.length - 21))
+            except EOFError:
+                print("ReliableMessage could not be parsed")
+                pass
 
 
     class Connect(KaitaiStruct):
